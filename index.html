@@ -37,7 +37,8 @@
             --transition: all 0.3s ease;
         }
 
-        /* CSS Variables - Dark Theme */[data-theme="dark"] {
+        /* CSS Variables - Dark Theme */
+        [data-theme="dark"] {
             --primary-blue: #3b82f6; 
             --primary-dark: #1d4ed8;
             --action-orange: #ff6b00;
@@ -139,7 +140,7 @@
         .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 0 20px 60px; /* Added bottom padding to replace review section spacing */
+            padding: 0 20px 60px;
         }
 
         /* Calculator Card */
@@ -424,6 +425,7 @@
             <div class="form-group">
                 <label for="delay">How long was your flight delayed upon arrival?</label>
                 <div class="select-wrapper">
+                    <!-- Added clear values for JS -->
                     <select id="delay">
                         <option value="" disabled selected>Select delay duration...</option>
                         <option value="less">Less than 3 hours</option>
@@ -435,6 +437,7 @@
             <div class="form-group">
                 <label for="distance">What was the flight distance?</label>
                 <div class="select-wrapper">
+                    <!-- Added clear values for JS -->
                     <select id="distance">
                         <option value="" disabled selected>Select flight distance...</option>
                         <option value="short">Short: Under 1,500 km (e.g. Paris to Rome)</option>
@@ -444,6 +447,7 @@
                 </div>
             </div>
 
+            <!-- Added onclick event listener initialization in JS rather than inline -->
             <button id="calc-btn" class="btn btn-primary">
                 <span class="btn-text">Check My Eligibility</span>
                 <span class="spinner"></span>
@@ -455,20 +459,22 @@
                 <!-- Negative Result -->
                 <div id="negative-result" class="negative-box" style="display: none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                    <span>Delay must be over 3 hours legally to qualify for compensation under EU261.</span>
+                    <span><strong>Not Eligible:</strong> Delay must be over 3 hours legally to qualify for compensation under EU261.</span>
                 </div>
 
                 <!-- Positive Result (Affiliate Trap) -->
                 <div id="positive-result" class="positive-box" style="display: none;">
                     <h3>Status: Eligible</h3>
-                    <strong class="amount-highlight">You Qualify!</strong>
+                    <!-- Added id="dynamic-amount" back here -->
+                    <strong class="amount-highlight" id="dynamic-amount">€0</strong>
                     
                     <div class="trap-text">
                         <strong>Fact:</strong> Airlines will ignore your emails or make excuses. Let our legal partners force them to pay you in 3 minutes (No Win, No Fee).
                     </div>
                     
                     <a href="#" id="claim-link" class="btn btn-pulse">
-                        Claim My Compensation Now ➔
+                        <!-- Added id="btn-amount" back here -->
+                        Claim My <span id="btn-amount">€0</span> Now ➔
                     </a>
                 </div>
 
@@ -506,7 +512,6 @@
             const themeToggle = document.getElementById('theme-toggle');
             const rootElement = document.documentElement;
             
-            // Check for saved theme or system preference
             const savedTheme = localStorage.getItem('theme');
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             
@@ -516,7 +521,6 @@
                 rootElement.setAttribute('data-theme', 'dark');
             }
 
-            // Toggle functionality
             themeToggle.addEventListener('click', () => {
                 const currentTheme = rootElement.getAttribute('data-theme');
                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -525,56 +529,83 @@
                 localStorage.setItem('theme', newTheme);
             });
 
-            /* --- Calculator Logic --- */
+            /* --- Fixed EU261 Calculator Logic --- */
             const calcBtn = document.getElementById('calc-btn');
-            const btnText = document.querySelector('.btn-text');
             const delaySelect = document.getElementById('delay');
             const distanceSelect = document.getElementById('distance');
             
-            const resultArea = document.getElementById('result-area');
-            const negativeResult = document.getElementById('negative-result');
-            const positiveResult = document.getElementById('positive-result');
+            calcBtn.addEventListener('click', calculateCompensation);
 
-            calcBtn.addEventListener('click', () => {
-                // Validation (Distance kept for CRO friction/user investment)
+            function calculateCompensation() {
+                // 1. Validate Form Input
                 if(!delaySelect.value || !distanceSelect.value) {
                     alert("Please select both your delay duration and flight distance.");
                     return;
                 }
 
+                // Get values
                 const delay = delaySelect.value;
+                const distance = distanceSelect.value;
 
-                // Reset UI
+                // Grab UI elements
+                const btnText = document.querySelector('.btn-text');
+                const resultArea = document.getElementById('result-area');
+                const negativeResult = document.getElementById('negative-result');
+                const positiveResult = document.getElementById('positive-result');
+                const dynamicAmount = document.getElementById('dynamic-amount');
+                const btnAmount = document.getElementById('btn-amount');
+
+                // 2. Reset UI State & Trigger Loading State
                 resultArea.classList.remove('active');
                 negativeResult.style.display = 'none';
                 positiveResult.style.display = 'none';
+                
                 calcBtn.classList.add('loading');
                 btnText.textContent = "Checking Legal Database...";
                 calcBtn.disabled = true;
 
-                // Simulate processing for CRO/Trust Building (1.2 seconds)
+                // 3. Process Logic & Display Result (Simulated API delay for Trust/CRO)
                 setTimeout(() => {
+                    // Reset Button State
                     calcBtn.classList.remove('loading');
                     btnText.textContent = "Check My Eligibility";
                     calcBtn.disabled = false;
 
-                    // Execute Logic
+                    // Rule 1: Delay Less Than 3 Hours = Not Eligible / Hide Box
                     if(delay === 'less') {
-                        // Negative Result
                         negativeResult.style.display = 'flex';
+                        positiveResult.style.display = 'none'; // Explicitly hiding affiliate box
                         resultArea.classList.add('active');
-                    } else {
-                        // Positive Result
+                    } 
+                    // Rule 2: Delay More Than 3 Hours = Eligible / Calculate / Show Box
+                    else if(delay === 'more') {
+                        let amount = 0;
+                        
+                        if(distance === 'short') {
+                            amount = 250;
+                        } else if (distance === 'medium') {
+                            amount = 400;
+                        } else if (distance === 'long') {
+                            amount = 600;
+                        }
+
+                        // Inject the dynamically calculated amount
+                        dynamicAmount.textContent = `€${amount}`;
+                        btnAmount.textContent = `€${amount}`;
+                        
+                        // Show the Affiliate Trap box
+                        negativeResult.style.display = 'none';
                         positiveResult.style.display = 'block';
                         resultArea.classList.add('active');
-
-                        // Smooth scroll slightly to show result fully on mobile
-                        setTimeout(() => {
-                            resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        }, 100);
                     }
-                }, 1200);
-            });
+
+                    // Smooth scroll to the result so mobile users don't miss it
+                    setTimeout(() => {
+                        resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 100);
+
+                }, 1200); // 1.2 second fake loading delay
+            }
         });
     </script>
 </body>
